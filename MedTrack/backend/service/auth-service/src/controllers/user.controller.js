@@ -13,7 +13,7 @@ const selfUpdateSchema = z.object({
 }).strict();
 
 const adminUpdateSchema = selfUpdateSchema.extend({
-    role: z.enum(db.ROLES)
+    role: z.enum(db.ROLES).optional()
 });
 
 exports.findAll = async (req, res) => {
