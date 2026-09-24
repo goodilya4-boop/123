@@ -1,35 +1,26 @@
 const db = require("../models");
-const User = db.user;
 
 const checkDuplicateEmail = async (req, res, next) => {
     try {
-        const user = await User.findOne({
-            where: { email: req.body.email }
-        });
+        const email = typeof req.body.email === "string"
+            ? req.body.email.trim().toLowerCase()
+            : req.body.email;
+
+        const user = await db.user.findOne({ where: { email } });
 
         if (user) {
-            return res.status(400).send({ message: "Ошибка! Email уже используется." });
+            return res.status(409).send({ message: "Email уже используется." });
         }
+
         next();
     } catch (error) {
-        return res.status(500).send({ message: error.message });
+        console.error("Ошибка проверки email:", error);
+        return res.status(500).send({ message: "Ошибка проверки email." });
     }
-};
-
-const checkRoleExisted = (req, res, next) => {
-    if (req.body.role) {
-        if (!db.ROLES.includes(req.body.role)) {
-            return res.status(400).send({
-                message: `Ошибка! Роль "${req.body.role}" не существует. Доступные роли: ${db.ROLES.join(', ')}`
-            });
-        }
-    }
-    next();
 };
 
 const verifySignUp = {
-    checkDuplicateEmail,
-    checkRoleExisted
+    checkDuplicateEmail
 };
 
 module.exports = verifySignUp;
