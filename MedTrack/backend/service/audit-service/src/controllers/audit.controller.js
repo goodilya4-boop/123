@@ -35,6 +35,10 @@ exports.create = async (req, res) => {
         const access = await Access.findByPk(data.user_access);
         if (!access) return res.status(400).send({ message: "Запись доступа не найдена." });
 
+        if (req.userRole !== "администратор" && access.user_id !== req.userId) {
+            return res.status(403).send({ message: "Недостаточно прав для этой записи доступа." });
+        }
+
         const audit = await Audit.create({
             ...data,
             time_start: data.time_start || null,
