@@ -7,24 +7,24 @@ module.exports = (sequelize, Sequelize) => {
         },
         first_name: {
             type: Sequelize.STRING(50),
-            allowNull: true
+            allowNull: false
         },
         last_name: {
             type: Sequelize.STRING(50),
-            allowNull: true
+            allowNull: false
         },
         role: {
             type: Sequelize.STRING(50),
-            allowNull: true,
+            allowNull: false,
             validate: {
                 isIn: {
                     args: [[
-                        'администратор', 
-                        'медсестра', 
-                        'медбрат', 
-                        'бухгалтер', 
-                        'главврач', 
-                        'заведующий отделением'
+                        "администратор",
+                        "медсестра",
+                        "медбрат",
+                        "бухгалтер",
+                        "главврач",
+                        "заведующий отделением"
                     ]],
                     msg: "Недопустимое значение роли"
                 }
@@ -32,15 +32,19 @@ module.exports = (sequelize, Sequelize) => {
         },
         email: {
             type: Sequelize.STRING(100),
-            allowNull: true
+            allowNull: false,
+            unique: true,
+            validate: {
+                isEmail: true
+            }
         },
         password: {
-            type: Sequelize.STRING(50),
+            type: Sequelize.STRING(255),
             allowNull: false
         }
     }, {
-        schema: 'MedTrack',
-        timestamps: false
+        schema: "MedTrack",
+        timestamps: true
     });
 
     return User;
