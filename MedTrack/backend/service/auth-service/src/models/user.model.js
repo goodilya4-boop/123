@@ -44,7 +44,7 @@ module.exports = (sequelize, Sequelize) => {
         }
     }, {
         schema: "MedTrack",
-        timestamps: true
+        timestamps: false
     });
 
     return User;
