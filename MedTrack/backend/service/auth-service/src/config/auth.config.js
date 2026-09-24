@@ -1,3 +1,12 @@
+const secret = process.env.JWT_SECRET;
+
+if (!secret || secret.length < 32) {
+    throw new Error("JWT_SECRET must be set and contain at least 32 characters.");
+}
+
 module.exports = {
-    secret: "89bfe96c3f5ff42a08f97b8787488eec"
+    secret,
+    expiresIn: process.env.JWT_EXPIRES_IN || "15m",
+    issuer: process.env.JWT_ISSUER || "medtrack-auth",
+    audience: process.env.JWT_AUDIENCE || "medtrack"
 };

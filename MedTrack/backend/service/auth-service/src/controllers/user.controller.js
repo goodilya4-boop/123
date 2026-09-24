@@ -1,98 +1,142 @@
 const db = require("../models");
 const User = db.user;
-const Op = db.Sequelize.Op;
-var bcrypt = require("bcryptjs");
+const bcrypt = require("bcryptjs");
+const { z } = require("zod");
+
+const userIdSchema = z.coerce.number().int().positive();
+
+const selfUpdateSchema = z.object({
+    first_name: z.string().trim().min(1).max(50).optional(),
+    last_name: z.string().trim().min(1).max(50).optional(),
+    email: z.string().trim().email().max(100).transform(value => value.toLowerCase()).optional(),
+    password: z.string().min(8).max(72).optional()
+}).strict();
+
+const adminUpdateSchema = selfUpdateSchema.extend({
+    role: z.enum(db.ROLES).optional()
+});
 
 exports.findAll = async (req, res) => {
     try {
         const users = await User.findAll({
-            attributes: { exclude: ['password'] }
+            attributes: { exclude: ["password"] }
         });
-        res.status(200).send(users);
+        return res.status(200).send(users);
     } catch (error) {
-        res.status(500).send({ message: error.message || "Ошибка при получении списка пользователей." });
+        console.error("Ошибка получения списка пользователей:", error);
+        return res.status(500).send({ message: "Ошибка при получении списка пользователей." });
     }
 };
 
 exports.findOne = async (req, res) => {
-    const id = req.params.id;
+    const parsedId = userIdSchema.safeParse(req.params.id);
+
+    if (!parsedId.success) {
+        return res.status(400).send({ message: "Некорректный id пользователя." });
+    }
+
+    const id = parsedId.data;
+
+    if (req.userId !== id && req.userRole !== "администратор") {
+        return res.status(403).send({ message: "Недостаточно прав." });
+    }
 
     try {
         const user = await User.findByPk(id, {
-            attributes: { exclude: ['password'] }
+            attributes: { exclude: ["password"] }
         });
 
         if (!user) {
-            return res.status(404).send({ message: `Пользователь с id=${id} не найден.` });
+            return res.status(404).send({ message: "Пользователь не найден." });
         }
 
-        res.status(200).send(user);
+        return res.status(200).send(user);
     } catch (error) {
-        res.status(500).send({ message: "Ошибка при получении пользователя с id=" + id });
+        console.error("Ошибка получения пользователя:", error);
+        return res.status(500).send({ message: "Ошибка при получении пользователя." });
     }
 };
 
 exports.update = async (req, res) => {
-    const id = req.params.id;
-    
-    let updateData = { ...req.body };
+    const parsedId = userIdSchema.safeParse(req.params.id);
+
+    if (!parsedId.success) {
+        return res.status(400).send({ message: "Некорректный id пользователя." });
+    }
+
+    const id = parsedId.data;
+    const isAdmin = req.userRole === "администратор";
+    const isSelf = req.userId === id;
+
+    if (!isSelf && !isAdmin) {
+        return res.status(403).send({ message: "Недостаточно прав." });
+    }
+
+    const schema = isAdmin ? adminUpdateSchema : selfUpdateSchema;
+    const parsedBody = schema.safeParse(req.body);
+
+    if (!parsedBody.success) {
+        return res.status(400).send({
+            message: "Некорректные данные пользователя.",
+            errors: parsedBody.error.flatten().fieldErrors
+        });
+    }
+
+    const updateData = { ...parsedBody.data };
+
+    if (updateData.password) {
+        updateData.password = bcrypt.hashSync(updateData.password, 12);
+    }
 
     try {
-        if (updateData.role) {
-            if (!db.ROLES.includes(updateData.role)) {
-                return res.status(400).send({ 
-                    message: `Ошибка: Недопустимая роль. Доступные роли: ${db.ROLES.join(', ')}` 
-                });
+        if (updateData.email) {
+            const existingUser = await User.findOne({
+                where: { email: updateData.email }
+            });
+
+            if (existingUser && existingUser.id !== id) {
+                return res.status(409).send({ message: "Email уже используется." });
             }
         }
 
-        if (updateData.password) {
-            updateData.password = bcrypt.hashSync(updateData.password, 8);
-        }
-
         const [num] = await User.update(updateData, {
-            where: { id: id }
+            where: { id }
         });
 
-        if (num === 1) {
-            res.send({ message: "Пользователь успешно обновлен." });
-        } else {
-            res.send({ 
-                message: `Невозможно обновить пользователя с id=${id}. Возможно, пользователь не найден или данные не изменились.` 
-            });
+        if (num !== 1) {
+            return res.status(404).send({ message: "Пользователь не найден." });
         }
+
+        return res.send({ message: "Пользователь успешно обновлен." });
     } catch (error) {
-        res.status(500).send({ message: "Ошибка при обновлении пользователя с id=" + id });
+        if (error.name === "SequelizeUniqueConstraintError") {
+            return res.status(409).send({ message: "Email уже используется." });
+        }
+
+        console.error("Ошибка обновления пользователя:", error);
+        return res.status(500).send({ message: "Ошибка при обновлении пользователя." });
     }
 };
 
 exports.delete = async (req, res) => {
-    const id = req.params.id;
+    const parsedId = userIdSchema.safeParse(req.params.id);
+
+    if (!parsedId.success) {
+        return res.status(400).send({ message: "Некорректный id пользователя." });
+    }
 
     try {
         const num = await User.destroy({
-            where: { id: id }
+            where: { id: parsedId.data }
         });
 
-        if (num == 1) {
-            res.send({ message: "Пользователь успешно удален." });
-        } else {
-            res.send({ message: `Невозможно удалить пользователя с id=${id}. Возможно, он не найден.` });
+        if (num !== 1) {
+            return res.status(404).send({ message: "Пользователь не найден." });
         }
-    } catch (error) {
-        res.status(500).send({ message: "Не удалось удалить пользователя с id=" + id });
-    }
-};
 
-exports.deleteAll = async (req, res) => {
-    try {
-        const nums = await User.destroy({
-            where: {},
-            truncate: false
-        });
-
-        res.send({ message: `Успешно удалено ${nums} пользователей.` });
+        return res.send({ message: "Пользователь успешно удален." });
     } catch (error) {
-        res.status(500).send({ message: "Ошибка при удалении всех пользователей." });
+        console.error("Ошибка удаления пользователя:", error);
+        return res.status(500).send({ message: "Не удалось удалить пользователя." });
     }
 };

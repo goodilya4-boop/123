@@ -7,6 +7,7 @@ const sequelize = new Sequelize(
     config.PASSWORD,
     {
         host: config.HOST,
+        port: config.PORT,
         dialect: config.dialect,
         pool: {
             max: config.pool.max,
@@ -15,7 +16,7 @@ const sequelize = new Sequelize(
             idle: config.pool.idle
         },
         define: {
-            schema: 'MedTrack'
+            schema: "MedTrack"
         }
     }
 );
@@ -28,12 +29,14 @@ db.sequelize = sequelize;
 db.user = require("../models/user.model.js")(sequelize, Sequelize);
 
 db.ROLES = [
-    'администратор', 
-    'медсестра', 
-    'медбрат', 
-    'бухгалтер', 
-    'главврач', 
-    'заведующий отделением'
+    "администратор",
+    "медсестра",
+    "медбрат",
+    "бухгалтер",
+    "главврач",
+    "заведующий отделением"
 ];
+
+db.DEFAULT_ROLE = "медсестра";
 
 module.exports = db;
