@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   clearSession,
   getCurrentUser,
@@ -76,12 +76,7 @@ function App() {
 
   return (
     <div className="app-shell">
-      <Sidebar
-        user={user}
-        view={view}
-        setView={setView}
-        onLogout={logout}
-      />
+      <Sidebar user={user} view={view} setView={setView} onLogout={logout} />
 
       <main className="main-content">
         <Topbar user={user} />
@@ -95,7 +90,7 @@ function App() {
           </div>
         )}
 
-        {view === "overview" && <Overview user={user} />}
+        {view === "overview" && <Overview user={user} onNavigate={setView} />}
         {view === "profile" && (
           <Profile
             session={session}
@@ -154,12 +149,10 @@ function AuthScreen({ onLogin }) {
     try {
       if (isRegister) {
         await signUp(form);
-        const nextSession = await signIn(form.email, form.password);
-        onLogin(nextSession);
-      } else {
-        const nextSession = await signIn(form.email, form.password);
-        onLogin(nextSession);
       }
+
+      const nextSession = await signIn(form.email, form.password);
+      onLogin(nextSession);
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -367,7 +360,7 @@ function Avatar({ user, large = false }) {
   return <div className={`avatar ${large ? "avatar--large" : ""}`}>{initials || "U"}</div>;
 }
 
-function Overview({ user }) {
+function Overview({ user, onNavigate }) {
   const firstName = user.first_name || "пользователь";
 
   return (
@@ -399,7 +392,7 @@ function Overview({ user }) {
           description="Просмотр и изменение персональных данных."
           icon="○"
           accent="teal"
-          onClick={() => window.dispatchEvent(new CustomEvent("open-profile"))}
+          onClick={() => onNavigate("profile")}
         />
         <DashboardCard
           title="Безопасность"
@@ -617,7 +610,3 @@ function Users() {
     </section>
   );
 }
-
-window.addEventListener("open-profile", () => {
-  // The dashboard card remains intentionally lightweight; navigation is handled by the sidebar.
-});
