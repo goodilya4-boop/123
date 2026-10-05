@@ -1,7 +1,7 @@
 import { createApp } from "vue";
 import { createRouter, createWebHistory } from "vue-router";
 import App from "./App.vue";
-import { routes } from "./router.js";
+import { routes, setupRouterGuards } from "./router.js";
 import "./styles.css";
 
 const router = createRouter({
@@ -9,5 +9,7 @@ const router = createRouter({
   routes,
   scrollBehavior: () => ({ top: 0 })
 });
+
+setupRouterGuards(router);
 
 createApp(App).use(router).mount("#app");
