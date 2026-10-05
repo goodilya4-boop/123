@@ -19,11 +19,11 @@ app.get("/health", (req, res) => {
 });
 
 app.use(
-  "/api",
   createProxyMiddleware({
     target: apiGatewayUrl,
     changeOrigin: true,
     xfwd: true,
+    pathFilter: ["/api"],
     proxyTimeout: 10000,
     timeout: 10000
   })
