@@ -32,12 +32,12 @@ app.get("/health", (req, res) => {
 });
 
 // Authentication endpoints are public; auth-service performs its own validation.
-app.use("/api/auth", createServiceProxy(config.authServiceUrl));
+app.use("/api/auth", createServiceProxy(config.authServiceUrl, "/api/auth"));
 
 // User and audit endpoints require a valid JWT at the gateway.
 // The downstream services validate it again for defense in depth.
 app.use("/api/users", verifyToken, createServiceProxy(config.authServiceUrl));
-app.use("/api/audit", verifyToken, createServiceProxy(config.auditServiceUrl));
+app.use("/api/audit", verifyToken, createServiceProxy(config.auditServiceUrl, "/api/audit"));
 
 app.use((req, res) => {
     res.status(404).json({ message: "Route not found." });
