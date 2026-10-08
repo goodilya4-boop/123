@@ -6,7 +6,7 @@ const sequelize = new Sequelize(config.DB, config.USER, config.PASSWORD, {
     port: config.PORT,
     dialect: config.dialect,
     pool: config.pool,
-    define: { schema: "MedTrack" },
+    define: { schema: "medtrak" },
     logging: false
 });
 
