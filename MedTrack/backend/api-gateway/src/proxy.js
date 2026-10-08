@@ -1,12 +1,19 @@
 const { createProxyMiddleware } = require("http-proxy-middleware");
 
-function createServiceProxy(target) {
+function createServiceProxy(target, pathPrefix) {
     return createProxyMiddleware({
         target,
         changeOrigin: true,
         xfwd: true,
         proxyTimeout: 10000,
         timeout: 10000,
+        pathRewrite: (path) => {
+            if (!pathPrefix) {
+                return path;
+            }
+
+            return path.startsWith("/") ? `${pathPrefix}${path}` : `${pathPrefix}/${path}`;
+        },
         on: {
             proxyReq(proxyReq, req) {
                 if (req.headers.authorization) {
