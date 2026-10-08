@@ -43,7 +43,7 @@ module.exports = (sequelize, Sequelize) => {
             allowNull: false
         }
     }, {
-        schema: "MedTrack",
+        schema: "medtrak",
         timestamps: false
     });
 
