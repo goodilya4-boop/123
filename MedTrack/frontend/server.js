@@ -19,7 +19,6 @@ app.get("/health", (req, res) => {
 });
 
 // API Gateway proxy.
-// The frontend itself is always served by Vite; no dist/ directory is used.
 app.use(
   createProxyMiddleware({
     target: apiGatewayUrl,
