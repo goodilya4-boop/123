@@ -16,7 +16,7 @@ const sequelize = new Sequelize(
             idle: config.pool.idle
         },
         define: {
-            schema: "MedTrack"
+            schema: "medtrak"
         }
     }
 );
